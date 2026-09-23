@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Naghmeh Kiumarsi — داشبورد فروش</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#141210; --panel:#1d1a17; --panel2:#26221e; --line:rgba(255,255,255,.09);
+  --ink:#f2ece1; --ink-dim:#a89f92; --gold:#c9a15a; --rose:#b98b8b; --green:#5f8a6b; --red:#a5504f;
+}
+*{box-sizing:border-box;}
+html,body{height:100%;}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Vazirmatn',sans-serif;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);}
+header{padding:22px 30px 14px;border-bottom:1px solid var(--line);}
+.brand{font-size:22px;font-weight:700;letter-spacing:.3px;}
+.brand span{color:var(--gold);font-weight:400;}
+.tabs{display:flex;gap:6px;margin-top:16px;flex-wrap:wrap;}
+.tab{padding:9px 18px;border-radius:8px;background:var(--panel);border:1px solid var(--line);cursor:pointer;font-size:13.5px;color:var(--ink-dim);}
+.tab.active{background:var(--gold);color:#141210;font-weight:600;border-color:var(--gold);}
+main{padding:26px 30px 60px;max-width:1100px;margin:0 auto;}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin-bottom:16px;}
+h2{font-size:16px;font-weight:600;margin:0 0 14px;}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px;}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;}
+.kpi .n{font-size:24px;font-weight:700;color:var(--gold);}
+.kpi .l{color:var(--ink-dim);font-size:12px;margin-top:4px;}
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
+select,input[type=text],input[type=number]{background:var(--panel2);border:1px solid var(--line);color:var(--ink);
+  border-radius:7px;padding:8px 10px;font-family:'Vazirmatn',sans-serif;font-size:13px;outline:none;}
+select:focus,input:focus{border-color:var(--gold);}
+button{background:var(--gold);color:#141210;border:none;border-radius:7px;padding:9px 18px;font-weight:600;
+  font-size:13px;cursor:pointer;font-family:'Vazirmatn',sans-serif;}
+button.ghost{background:transparent;color:var(--ink-dim);border:1px solid var(--line);padding:7px 12px;font-weight:500;}
+.formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:12px;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th,td{padding:8px 6px;text-align:right;border-bottom:1px solid var(--line);}
+th{color:var(--ink-dim);font-weight:500;font-size:12px;}
+.pillbtn{color:var(--ink-dim);cursor:pointer;padding:2px 6px;}
+.pillbtn:hover{color:var(--gold);}
+.pillbtn.del:hover{color:var(--red);}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.note{color:var(--ink-dim);font-size:12px;line-height:1.8;}
+.chart-title{font-size:12.5px;color:var(--ink-dim);margin-bottom:8px;}
+@media(max-width:760px){ .two{grid-template-columns:1fr;} main{padding:18px 14px;} header{padding:18px 16px 12px;} }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">Naghmeh Kiumarsi <span>— داشبورد فروش بوتیک</span></div>
+  <div class="tabs" id="tabs"></div>
+</header>
+<main id="main"></main>
+
+<script>
+const PRODUCTS = ['شومیز','کت','شلوار','شال','گردنبند','فندک','کمربند','عبا','اورال','جلیقه','دامن','گل سینه','گوشواره','کیف','کلاه'];
+const REASONS = ['قیمت بالا','مدل موردنظر را پیدا نکرد','سایز مناسب نداشت','فقط برای دیدن آمده بود','قصد خرید در آینده دارد','نیاز به بررسی / تصمیم‌گیری دارد','محصول موردنظر موجود نبود','کیفیت / جنس مورد پسند نبود','رنگ موردنظر موجود نبود','در حال مقایسه با گزینه‌های دیگر بود','دلیل نامشخص','سایر'];
+const TABS = [{id:'dash', label:'داشبورد'}, {id:'entry', label:'ثبت و مدیریت فروش'}, {id:'products', label:'گزارش محصولات'}];
+
+let DATA = {};
+try{ DATA = JSON.parse(localStorage.getItem('nk-sales')||'{}'); }catch(e){ DATA = {}; }
+function save(){ try{ localStorage.setItem('nk-sales', JSON.stringify(DATA)); }catch(e){} }
+if(!DATA.sales){
+  DATA.sales = [
+    {id:'s1', day:1, loc:'بوتیک', shift:'صبح', product:'شومیز', qty:2, revenue:4200000, customer:'', note:'نمونه — قابل حذف'},
+    {id:'s2', day:1, loc:'شوروم', shift:'عصر', product:'کت', qty:1, revenue:5800000, customer:'', note:'نمونه — قابل حذف'},
+    {id:'s3', day:2, loc:'بوتیک', shift:'عصر', product:'شال', qty:3, revenue:2100000, customer:'', note:'نمونه — قابل حذف'},
+    {id:'s4', day:3, loc:'شوروم', shift:'صبح', product:'شلوار', qty:2, revenue:3600000, customer:'', note:'نمونه — قابل حذف'},
+  ];
+  save();
+}
+let filters = {loc:'همه', shift:'همه', product:'همه', q:''};
+let tab = 'dash';
+let editingId = null;
+
+function uid(){ return 's'+Math.random().toString(36).slice(2,9); }
+function toman(n){ return Number(n||0).toLocaleString('fa-IR'); }
+function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+
+function filtered(){
+  return DATA.sales.filter(s=>
+    (filters.loc==='همه'||s.loc===filters.loc) &&
+    (filters.shift==='همه'||s.shift===filters.shift) &&
+    (filters.product==='همه'||s.product===filters.product) &&
+    (!filters.q || (s.customer||'').includes(filters.q) || (s.note||'').includes(filters.q))
+  );
+}
+
+function renderTabs(){
+  document.getElementById('tabs').innerHTML = TABS.map(t=>`<div class="tab ${t.id===tab?'active':''}" onclick="setTab('${t.id}')">${t.label}</div>`).join('');
+}
+function setTab(id){ tab=id; render(); }
+function render(){
+  renderTabs();
+  const m = document.getElementById('main');
+  if(tab==='dash') m.innerHTML = dashView();
+  else if(tab==='entry') m.innerHTML = entryView();
+  else if(tab==='products') m.innerHTML = productsView();
+}
+
+function filterBar(){
+  return `<div class="filters">
+    <select onchange="filters.loc=this.value;render()">
+      ${['همه','بوتیک','شوروم'].map(o=>`<option ${filters.loc===o?'selected':''}>${o}</option>`).join('')}
+    </select>
+    <select onchange="filters.shift=this.value;render()">
+      ${['همه','صبح','عصر'].map(o=>`<option ${filters.shift===o?'selected':''}>${o}</option>`).join('')}
+    </select>
+    <select onchange="filters.product=this.value;render()">
+      <option ${filters.product==='همه'?'selected':''}>همه</option>
+      ${PRODUCTS.map(p=>`<option ${filters.product===p?'selected':''}>${p}</option>`).join('')}
+    </select>
+  </div>`;
+}
+
+function barsChart(values, color, labels){
+  const w=560,h=90,gap=3,n=values.length;
+  const bw=(w-gap*(n-1))/n;
+  const max=Math.max(...values,1);
+  let bars='';
+  values.forEach((v,i)=>{
+    const bh=v? Math.max(2,(v/max)*h):0;
+    const x=i*(bw+gap), y=h-bh;
+    bars+=`<rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="1.5" fill="${color}"><title>${labels?labels[i]:i+1}: ${v}</title></rect>`;
+  });
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:90px;">${bars}</svg>`;
+}
+
+function dayArray(rows, key){
+  const arr = new Array(30).fill(0);
+  rows.forEach(s=>{ if(s.day>=1 && s.day<=30) arr[s.day-1] += Number(s[key]||0); });
+  return arr;
+}
+
+function dashView(){
+  const rows = filtered();
+  const items = rows.reduce((a,b)=>a+Number(b.qty||0),0);
+  const revenue = rows.reduce((a,b)=>a+Number(b.revenue||0),0);
+  const boutique = DATA.sales.filter(s=>s.loc==='بوتیک');
+  const showroom = DATA.sales.filter(s=>s.loc==='شوروم');
+  const morning = DATA.sales.filter(s=>s.shift==='صبح');
+  const evening = DATA.sales.filter(s=>s.shift==='عصر');
+  const sum = (arr,k)=>arr.reduce((a,b)=>a+Number(b[k]||0),0);
+  const byProduct = {};
+  rows.forEach(s=>{ byProduct[s.product] = byProduct[s.product] || {qty:0,rev:0}; byProduct[s.product].qty += Number(s.qty||0); byProduct[s.product].rev += Number(s.revenue||0); });
+  const prodEntries = Object.entries(byProduct).sort((a,b)=>b[1].qty-a[1].qty);
+
+  return `
+  <div class="kpis">
+    <div class="kpi"><div class="n">${toman(revenue)}</div><div class="l">فروش کل (ریال)</div></div>
+    <div class="kpi"><div class="n">${toman(items)}</div><div class="l">تعداد آیتم فروخته‌شده</div></div>
+    <div class="kpi"><div class="n">${rows.length}</div><div class="l">تعداد رکورد فروش</div></div>
+    <div class="kpi"><div class="n">${toman(items? Math.round(revenue/items):0)}</div><div class="l">میانگین ریالی هر آیتم</div></div>
+  </div>
+  ${filterBar()}
+  <div class="two">
+    <div class="card"><h2>تعداد آیتم فروخته‌شده در روز (۱ تا ۳۰ مهر)</h2>${barsChart(dayArray(rows,'qty'), '#c9a15a')}</div>
+    <div class="card"><h2>مبلغ فروش روزانه (ریال)</h2>${barsChart(dayArray(rows,'revenue'), '#b98b8b')}</div>
+  </div>
+  <div class="two">
+    <div class="card">
+      <h2>بوتیک در برابر شوروم</h2>
+      <div class="chart-title">تعداد آیتم — بوتیک: ${toman(sum(boutique,'qty'))} · شوروم: ${toman(sum(showroom,'qty'))} · مجموع: ${toman(sum(boutique,'qty')+sum(showroom,'qty'))}</div>
+      ${barsChart([sum(boutique,'qty'), sum(showroom,'qty')], '#c9a15a', ['بوتیک','شوروم'])}
+      <div class="chart-title" style="margin-top:12px;">مبلغ فروش — بوتیک: ${toman(sum(boutique,'revenue'))} · شوروم: ${toman(sum(showroom,'revenue'))}</div>
+      ${barsChart([sum(boutique,'revenue'), sum(showroom,'revenue')], '#b98b8b', ['بوتیک','شوروم'])}
+    </div>
+    <div class="card">
+      <h2>صبح در برابر عصر</h2>
+      <div class="chart-title">تعداد آیتم — صبح: ${toman(sum(morning,'qty'))} · عصر: ${toman(sum(evening,'qty'))}</div>
+      ${barsChart([sum(morning,'qty'), sum(evening,'qty')], '#c9a15a', ['صبح','عصر'])}
+      <div class="chart-title" style="margin-top:12px;">مبلغ فروش — صبح: ${toman(sum(morning,'revenue'))} · عصر: ${toman(sum(evening,'revenue'))}</div>
+      ${barsChart([sum(morning,'revenue'), sum(evening,'revenue')], '#b98b8b', ['صبح','عصر'])}
+    </div>
+  </div>
+  <div class="card">
+    <h2>پرفروش‌ترین آیتم‌ها (بر اساس فیلتر فعلی)</h2>
+    ${prodEntries.length? `<table><tr><th>محصول</th><th>تعداد فروش</th><th>مبلغ فروش</th></tr>
+      ${prodEntries.slice(0,8).map(([p,v])=>`<tr><td>${p}</td><td>${toman(v.qty)}</td><td>${toman(v.rev)}</td></tr>`).join('')}
+    </table>` : `<div class="note">داده‌ای برای این فیلتر ثبت نشده است.</div>`}
+  </div>`;
+}
+
+function entryView(){
+  const rows = filtered();
+  const e = editingId? DATA.sales.find(s=>s.id===editingId) : null;
+  return `
+  <div class="card">
+    <h2>${e? 'ویرایش فروش' : 'ثبت فروش جدید'}</h2>
+    <div class="formgrid">
+      <div><label class="note">روز مهر</label><input type="number" id="f-day" min="1" max="30" value="${e?e.day:(window.lastDay||1)}"></div>
+      <div><label class="note">محل فروش</label><select id="f-loc">${['بوتیک','شوروم'].map(o=>`<option ${(e?e.loc:(window.lastLoc||'بوتیک'))===o?'selected':''}>${o}</option>`).join('')}</select></div>
+      <div><label class="note">شیفت</label><select id="f-shift">${['صبح','عصر'].map(o=>`<option ${(e?e.shift:(window.lastShift||'صبح'))===o?'selected':''}>${o}</option>`).join('')}</select></div>
+      <div><label class="note">نوع آیتم</label><select id="f-product">${PRODUCTS.map(p=>`<option ${(e?e.product:PRODUCTS[0])===p?'selected':''}>${p}</option>`).join('')}</select></div>
+      <div><label class="note">تعداد</label><input type="number" id="f-qty" min="1" value="${e?e.qty:1}"></div>
+      <div><label class="note">مبلغ فروش (ریال)</label><input type="number" id="f-revenue" min="0" value="${e?e.revenue:''}"></div>
+      <div><label class="note">مشتری (اختیاری)</label><input type="text" id="f-customer" value="${e?esc(e.customer):''}"></div>
+      <div><label class="note">توضیحات (اختیاری)</label><input type="text" id="f-note" value="${e?esc(e.note):''}"></div>
+    </div>
+    <button onclick="saveSale()">${e?'ذخیره تغییرات':'ثبت و ادامه'}</button>
+    ${e? `<button class="ghost" onclick="editingId=null;render()">انصراف</button>`:''}
+  </div>
+  <div class="card">
+    <h2>لیست فروش‌ها (${rows.length})</h2>
+    <div class="filters">
+      ${filterBar().replace('<div class="filters">','').replace('</div>','')}
+      <input type="text" placeholder="جست‌وجوی مشتری یا توضیحات…" value="${esc(filters.q)}" oninput="filters.q=this.value;render()">
+    </div>
+    <table>
+      <tr><th>روز</th><th>محل</th><th>شیفت</th><th>آیتم</th><th>تعداد</th><th>مبلغ (ریال)</th><th>مشتری</th><th></th></tr>
+      ${rows.slice().sort((a,b)=>a.day-b.day).map(s=>`
+        <tr>
+          <td>${s.day}</td><td>${s.loc}</td><td>${s.shift}</td><td>${s.product}</td>
+          <td>${toman(s.qty)}</td><td>${toman(s.revenue)}</td><td>${esc(s.customer)||'—'}</td>
+          <td><span class="pillbtn" onclick="editingId='${s.id}';render()">✎</span> <span class="pillbtn del" onclick="delSale('${s.id}')">✕</span></td>
+        </tr>`).join('')}
+    </table>
+    ${!rows.length? `<div class="note">رکوردی یافت نشد.</div>`:''}
+  </div>`;
+}
+function saveSale(){
+  const day = Number(document.getElementById('f-day').value);
+  const loc = document.getElementById('f-loc').value;
+  const shift = document.getElementById('f-shift').value;
+  const product = document.getElementById('f-product').value;
+  const qty = Number(document.getElementById('f-qty').value);
+  const revenue = Number(document.getElementById('f-revenue').value);
+  const customer = document.getElementById('f-customer').value.trim();
+  const note = document.getElementById('f-note').value.trim();
+  if(!day||day<1||day>30||!qty||qty<0||revenue<0||isNaN(revenue)){ alert('لطفاً مقادیر را درست وارد کنید (روز ۱ تا ۳۰، تعداد و مبلغ نامنفی).'); return; }
+  if(editingId){
+    const s = DATA.sales.find(x=>x.id===editingId);
+    Object.assign(s, {day,loc,shift,product,qty,revenue,customer,note});
+    editingId = null;
+  } else {
+    DATA.sales.push({id:uid(), day, loc, shift, product, qty, revenue, customer, note});
+  }
+  window.lastDay=day; window.lastLoc=loc; window.lastShift=shift;
+  save(); render();
+}
+function delSale(id){ DATA.sales = DATA.sales.filter(s=>s.id!==id); save(); render(); }
+
+function productsView(){
+  const rows = filtered();
+  const totQty = rows.reduce((a,b)=>a+Number(b.qty||0),0);
+  const totRev = rows.reduce((a,b)=>a+Number(b.revenue||0),0);
+  const byProduct = {};
+  PRODUCTS.forEach(p=> byProduct[p] = {qty:0,rev:0});
+  rows.forEach(s=>{ byProduct[s.product].qty += Number(s.qty||0); byProduct[s.product].rev += Number(s.revenue||0); });
+  const arr = Object.entries(byProduct).sort((a,b)=>b[1].rev-a[1].rev);
+  return `
+  ${filterBar()}
+  <div class="card">
+    <h2>تحلیل محصولات</h2>
+    <table>
+      <tr><th>محصول</th><th>تعداد فروش</th><th>مبلغ فروش (ریال)</th><th>سهم از تعداد</th><th>سهم از فروش ریالی</th></tr>
+      ${arr.map(([p,v])=>`
+        <tr><td>${p}</td><td>${toman(v.qty)}</td><td>${toman(v.rev)}</td>
+        <td>${totQty? ((v.qty/totQty)*100).toFixed(1):0}٪</td>
+        <td>${totRev? ((v.rev/totRev)*100).toFixed(1):0}٪</td></tr>`).join('')}
+    </table>
+  </div>
+  <div class="card">
+    <h2>تعداد فروش هر محصول</h2>
+    ${barsChart(arr.map(a=>a[1].qty), '#c9a15a', arr.map(a=>a[0]))}
+  </div>
+  <div class="card">
+    <h2>مبلغ فروش هر محصول (ریال)</h2>
+    ${barsChart(arr.map(a=>a[1].rev), '#b98b8b', arr.map(a=>a[0]))}
+  </div>`;
+}
+
+render();
+</script>
+</body>
+</html>
